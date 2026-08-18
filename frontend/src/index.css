@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply min-h-screen bg-[#EEF1F8] font-sans text-slate-900 antialiased dark:bg-[#0B0B14] dark:text-white;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  /* Visible, consistent keyboard focus across every interactive element. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ios-blue ring-offset-2 ring-offset-[#EEF1F8] dark:ring-offset-[#0B0B14];
+  }
+
+  ::selection {
+    @apply bg-ios-blue/30;
+  }
+}
+
+@layer components {
+  /* iOS "clear glass" surface: translucent fill, frosted blur, hairline edge. */
+  .glass {
+    @apply border border-black/[0.07] bg-white/70 shadow-glass backdrop-blur-2xl
+           dark:border-white/10 dark:bg-white/[0.07] dark:shadow-glass-dark;
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
+  }
+
+  /* Thinner glass for controls sitting on top of a glass panel. */
+  .glass-inset {
+    @apply border border-black/[0.06] bg-white/60 backdrop-blur-xl
+           dark:border-white/10 dark:bg-white/[0.06];
+  }
+
+  .text-muted {
+    @apply text-slate-600 dark:text-white/60;
+  }
+}
+
+@layer utilities {
+  .scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(120, 120, 140, 0.4) transparent;
+  }
+
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-slate-400/40 dark:bg-white/20;
+  }
+}
+
+/* Honour the OS "reduce motion" setting for CSS-driven animation. Framer Motion
+   is handled separately via useReducedMotion(). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

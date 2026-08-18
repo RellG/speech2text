@@ -1,0 +1,62 @@
+# TLS termination for the Speech-to-Text app.
+#
+# Why this exists: browsers only expose getUserMedia() (and navigator.clipboard)
+# in a "secure context" — HTTPS or localhost. Over plain http://192.168.4.129:8000
+# the record button is inert on every device except the Pi itself. Caddy fronts
+# the app with certificates from its own internal CA, so recording works from
+# phones and laptops on the LAN.
+#
+# `tls internal` makes Caddy run a local CA and issue short-lived certs it
+# renews automatically. Install its root certificate once per device
+# (see README) and these origins become fully trusted — no warning click-through.
+
+{
+	# No public ACME here; everything is issued by the local CA.
+	admin off
+
+	# Clients never send SNI for a bare IP address (SNI is hostname-only), so a
+	# request to https://192.168.4.129 arrives with no server name and Caddy has
+	# nothing to match — it aborts the handshake with an internal-error alert.
+	# Assuming this SNI when none is offered makes the IP URL work in browsers.
+	default_sni 192.168.4.129
+
+	log {
+		output stderr
+		level INFO
+	}
+}
+
+# Every address someone might reasonably use to reach the Pi. Caddy issues one
+# certificate covering all of them, including the bare IP as an IP SAN.
+https://192.168.4.129,
+https://raspberrypi,
+https://raspberrypi.local,
+https://localhost {
+	tls internal
+
+	encode zstd gzip
+
+	# Long recordings are split server-side, so uploads can be large. Keep this
+	# above the backend's MAX_UPLOAD_MB so an oversized file gets the API's
+	# clear 413 message rather than an opaque proxy error.
+	request_body {
+		max_size 220MB
+	}
+
+	reverse_proxy stt-app:8000 {
+		header_up X-Forwarded-Proto https
+		# A long recording is many sequential Speech API calls; don't cut it off.
+		transport http {
+			read_timeout 30m
+			write_timeout 30m
+		}
+	}
+}
+
+# Send plain HTTP to HTTPS so a typed bare address still lands somewhere secure.
+http://192.168.4.129,
+http://raspberrypi,
+http://raspberrypi.local,
+http://localhost {
+	redir https://{host}{uri} permanent
+}

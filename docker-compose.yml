@@ -1,0 +1,60 @@
+services:
+  stt-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: speech2text:latest
+    container_name: stt-app
+    restart: unless-stopped
+    # Run as the uid/gid that owns gcp-key.json on the host, so the key can stay
+    # chmod 600 instead of being made world-readable for the container to read
+    # it. Change this if your key is owned by a different user.
+    user: "1000:1000"
+    ports:
+      # Plain HTTP stays bound to loopback only: it is reachable through an SSH
+      # tunnel, while everything on the LAN goes via the TLS proxy below.
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./gcp-key.json:/app/gcp-key.json:ro
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /app/gcp-key.json
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID}
+      GCP_LOCATION: ${GCP_LOCATION:-us-central1}
+      STT_MODEL: ${STT_MODEL:-chirp_2}
+      STT_LANGUAGE_CODES: ${STT_LANGUAGE_CODES:-en-US}
+      # Recording-length tunables. These must be listed here or the values in
+      # .env never reach the container and editing .env looks like a no-op.
+      MAX_RECORDING_SECONDS: ${MAX_RECORDING_SECONDS:-600}
+      CHUNK_SECONDS: ${CHUNK_SECONDS:-50}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-200}
+    # `mem_limit` is what plain (non-swarm) Docker Compose enforces; the
+    # `deploy` block keeps the same cap if this is ever run under Swarm.
+    # Both require memory cgroups enabled in the kernel cmdline.
+    mem_limit: 512m
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # TLS termination. Browsers gate getUserMedia() behind a secure context, so
+  # without this the microphone only works on the Pi itself.
+  caddy:
+    image: caddy:2-alpine
+    container_name: stt-caddy
+    restart: unless-stopped
+    depends_on:
+      - stt-app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # caddy_data holds the internal CA and issued certs — it must persist, or
+      # every restart mints a new CA and devices stop trusting the app.
+      - caddy_data:/data
+      - caddy_config:/config
+    mem_limit: 128m
+
+volumes:
+  caddy_data:
+  caddy_config:

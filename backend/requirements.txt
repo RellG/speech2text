@@ -1,0 +1,18 @@
+# Pinned for this Raspberry Pi's 32-bit armhf userland, where PyPI publishes no
+# manylinux wheels at all. Compiled dependencies (grpcio, cryptography) come
+# from apt in the Dockerfile; everything below must resolve to a pure-Python or
+# universal wheel, which the build enforces with --only-binary=:all:.
+#
+#  * pydantic is held at v1: v2 needs the Rust pydantic-core, which has no
+#    working armv7l build anywhere. v1 is pure Python. FastAPI is pinned to
+#    0.115.x to match, the last line that still supports Pydantic v1.
+#  * uvicorn without the [standard] extra, which would drag in uvloop/httptools
+#    /cffi and force a source build. Pure-Python h11 is plenty here.
+#  * grpcio-status matches the apt grpcio version so pip has no reason to pull
+#    a newer (broken) grpcio in.
+fastapi>=0.115,<0.116
+pydantic>=1.10,<2
+uvicorn>=0.30,<1.0
+python-multipart>=0.0.9
+grpcio-status==1.51.1
+google-cloud-speech>=2.27,<3.0

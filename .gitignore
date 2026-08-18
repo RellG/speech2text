@@ -1,0 +1,16 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.env
+gcp-key.json
+*.json.json
+caddy-root-ca.crt.bak
+.DS_Store
+
+# AI assistant notes (kept out of the public repo)
+CLAUDE.md
+AGENTS.md
+.claude/
+.env.bak*
+caddy-root-ca.crt

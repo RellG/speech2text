@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+**/__pycache__
+**/*.pyc
+.git
+.gitignore
+.env
+gcp-key.json
+README.md

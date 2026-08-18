@@ -1,0 +1,5 @@
+# Protect the two compiled packages that come from apt (Debian builds them for
+# armhf; PyPI and piwheels do not ship working armv7l wheels for either).
+# Without these pins pip would happily replace them with a broken build.
+grpcio==1.51.1
+cryptography==38.0.4
